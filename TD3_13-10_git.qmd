@@ -1,0 +1,145 @@
+---
+title: "TD3_3-10"
+format: html
+editor: visual
+execute: 
+  echo: false
+  keep-md: true
+---
+
+```{r configuration}
+#| message: false 
+here::i_am("TD3_13-0.Rproj")
+library(here)
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(ggplot2)
+```
+
+```{r}
+spotify <- readRDS("top-spotify-hits-2000-2019.Rds")
+```
+
+## Exercise 1
+
+### Question 1
+
+```{r}
+distinct_song <- spotify %>% distinct(artist, song, .keep_all = TRUE)
+distinct_genre <- spotify %>% distinct(genre)
+```
+
+The data set contains `r nrow(distinct_song)` songs from `r nrow(spotify)` artists and of `r nrow(distinct_genre)` different genres.
+
+### Question 2
+
+```{r}
+artists_per_year <- distinct_song |>
+  group_by(year) |>
+  summarise(n())
+kable(artists_per_year)
+```
+
+### Question 3
+
+```{r}
+popularity <- distinct_song |>
+  group_by(artist) |>
+  summarise(count = n()) |>
+  arrange(-count)
+
+most_popular_artist <- slice(popularity, 1)
+```
+
+`r most_popular_artist$artist` is the most popular artist with `r most_popular_artist$count` songs.
+
+### Question 4
+
+```{r}
+variable_tempo <- distinct_song |>
+  group_by(genre) |>
+  summarise(median = median(tempo), 
+            mean = mean(tempo), 
+            minimum = min(tempo), 
+            maximum = max(tempo), 
+            number_song = n())
+kable(variable_tempo)
+```
+
+### Question 5
+
+```{r}
+mean_liveness_danceability <- distinct_song |>
+  group_by(year) |>
+  summarise(mean_liveness = mean(liveness), 
+            mean_danceability = mean(danceability))
+kable(mean_liveness_danceability)
+```
+
+### Question 6
+
+We reorganize the data set in a long format, to represent in the same graph the mean of the liveness and the mean of the danceability.
+
+```{r long_mean_per_year}
+long_mean_liveness_danceability <- mean_liveness_danceability |> pivot_longer(-year, names_to = "Variable", values_to = "Mean")
+```
+
+```{r long_mean_per_year_graph}
+ggplot(long_mean_liveness_danceability, aes(x = year, y = Mean, group = `Variable`, color = `Variable`)) +
+  geom_line()
+```
+
+I chose to represent the temporal evolution of the mean annual liveness and the mean of annual danceability with a line, because these two variables are discrete.
+
+## Exercise 2
+
+```{r}
+dropout <- readRDS("dropout.Rds")
+```
+
+### Question 1
+
+```{r}
+median_admissiongrade <- dropout |>
+  group_by(Target, `Marital status`) |>
+  summarise(median_Admission_grade = median(`Admission grade`), .groups = "drop_last")
+kable(median_admissiongrade)
+```
+
+### Question 2
+
+```{r}
+mean_admission_grade_wide <- median_admissiongrade |>
+  pivot_wider(values_from = median_Admission_grade, names_from = Target)
+kable(head(mean_admission_grade_wide,3))
+```
+
+### Question 3
+
+We compute the median of the grade for the first and second semester conditional to the gender, by using grouping by Gender.
+
+```{r}
+curriculum_variable <- dropout |>
+  select(Gender, contains("Curricular")) |>
+  group_by(Gender) |>
+  summarise(across(where(is.numeric), median))
+kable(curriculum_variable)
+```
+
+### Question 4
+
+```{r}
+modified_table <- dropout |> 
+  select(contains("Curricular"), Gender) |>
+  pivot_longer(cols = contains("Curricular"), names_to = "Units", values_to = "Value")
+```
+
+```{r}
+final_table <- modified_table |> 
+  group_by(Units, Gender) |>
+  summarise(median_value = median(Value, na.rm=TRUE), .groups = 'drop') |> 
+pivot_wider(names_from = Gender,
+            values_from = median_value)
+kable(head(final_table [2:4, ]))
+```
