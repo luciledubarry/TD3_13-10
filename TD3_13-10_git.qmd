@@ -1,15 +1,12 @@
----
-title: "TD3_3-10"
+title: "TD3_3-10" 
 format: html
-editor: visual
 execute: 
-  echo: false
+  echo: false 
   keep-md: true
----
 
 ```{r configuration}
 #| message: false 
-here::i_am("TD3_13-0.Rproj")
+here::i_am("TD3_13-10.Rproj")
 library(here)
 library(dplyr)
 library(tidyr)
